@@ -1,0 +1,47 @@
+#+title: Generate a regular grid from one point and one azimut
+#+options: title:t author:nil date:nil
+
+This repository include functions to generate a regular grid from one
+point and one azimut.
+
+#+begin_src R :results none :session *R* :exports code
+library(sf)
+library(ggplot2)
+source("forest-plot-grid.R")
+#+end_src
+
+To derive the grid, function ~get_grid()~ needs the coordinates (in
+longitude and latitude) of the lower left corner of the grid and the
+azimut of the grid (the direction of the lower left corner to the
+upper left corner in degree). The coordinate reference system for
+projecting and computing distances must be specified. The length of
+the plot (~distance~, in m) and the cell size (~bin~, in m) must also
+be specified.
+
+#+begin_src R :results none :session *R* :exports code
+get_grid(coords=c(166.688126, -22.106773),
+         azimut=306,
+         proj="epsg:3163",
+         distance=100,
+         bin=10)
+#+end_src
+
+Function ~get_grid()~ produces two vector files (~GPKG~ format). A
+polygon vector file for the grid and a point vector file for the
+corners of the cells.
+
+#+begin_src R :results none :session *R* :exports code
+corners <- sf::st_read("corners.gpkg", quiet=TRUE)
+grid <- sf::st_read("grid.gpkg", quiet=TRUE)
+#+end_src
+
+#+begin_src R :results graphics file :file "figure.png" :exports both :session *R*
+ggplot() +
+  geom_sf(data=grid) + 
+  geom_sf(data=corners)
+#+end_src
+
+#+RESULTS:
+[[file:figure.png]]
+
+# End
