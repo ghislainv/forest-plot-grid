@@ -1,4 +1,4 @@
-#+title: Generate a regular grid from one point and one azimut
+#+title: Regular grid from one point and one azimut
 #+options: title:t author:nil date:nil
 
 This repository include functions to generate a regular grid from one
@@ -7,16 +7,17 @@ point and one azimut.
 #+begin_src R :results none :session *R* :exports code
 library(sf)
 library(ggplot2)
+library(dplyr)
 source("forest-plot-grid.R")
 #+end_src
 
-To derive the grid, function ~get_grid()~ needs the coordinates (in
-longitude and latitude) of the lower left corner of the grid and the
-azimut of the grid (the direction of the lower left corner to the
-upper left corner in degree). The coordinate reference system for
-projecting and computing distances must be specified. The length of
-the plot (~distance~, in m) and the cell size (~bin~, in m) must also
-be specified.
+Function ~get_grid()~ needs the coordinates (in longitude and
+latitude) of the *lower left corner* of the grid (point A0) and the azimut of the
+grid (the direction of the lower left corner to the upper left corner
+in degree). The coordinate reference system for projecting and
+computing distances must be specified. The length of the plot
+(~distance~, in m) and the cell size (~bin~, in m) must also be
+specified.
 
 #+begin_src R :results none :session *R* :exports code
 get_grid(coords=c(166.688126, -22.106773),
@@ -27,8 +28,8 @@ get_grid(coords=c(166.688126, -22.106773),
 #+end_src
 
 Function ~get_grid()~ produces two vector files (~GPKG~ format). A
-polygon vector file for the grid and a point vector file for the
-corners of the cells.
+polygon vector file for the grid and a point vector file for the cell
+corners.
 
 #+begin_src R :results none :session *R* :exports code
 corners <- sf::st_read("corners.gpkg", quiet=TRUE)
@@ -36,9 +37,27 @@ grid <- sf::st_read("grid.gpkg", quiet=TRUE)
 #+end_src
 
 #+begin_src R :results graphics file :file "figure.png" :exports both :session *R*
+# Filter the four corners
+four_corners <- corners |>
+  dplyr::filter(name %in% c("A0", "K0", "A10", "K10")) |>
+  sf::st_transform("epsg:3163")
+# Change coordinates so that labels do not overlap points
+cc <- sf::st_coordinates(four_corners)
+mm <- rbind(c(0, -7), c(7, 0), c(-7, 0), c(0, 7))
+gg <- sf::st_multipoint(cc + mm) |>
+  sf::st_geometry() |>
+  sf::st_cast("POINT") |>
+  sf::st_set_crs("epsg:3163")
+sf::st_geometry(four_corners) <- gg
+four_corners <- four_corners |>
+  sf::st_transform("epsg:4326")
+
+# Make plot
 ggplot() +
-  geom_sf(data=grid) + 
-  geom_sf(data=corners)
+  geom_sf(data=grid) +
+  geom_sf_text(data=grid, aes(label=name), size=3) +
+  geom_sf(data=corners) +
+  geom_sf_text(data=four_corners, aes(label=name), color="blue", size=4)
 #+end_src
 
 #+RESULTS:

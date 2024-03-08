@@ -1,4 +1,5 @@
 *.gpkg
+*.html
 
 # History files
 .Rhistory

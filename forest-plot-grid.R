@@ -26,9 +26,16 @@ rotate_coord <- function(x, coords, azimut) {
 ##' @param proj Projected crs.
 ##' @return Corners and grid as vector points and polygons.
 ##' @author Ghislain Vieilledent
-##' @import sf 
+##' @import sf
+##' @import checkmate
 get_grid <- function(coords, azimut, proj, distance=100, bin=10) {
- 
+
+  # Check
+  checkmate::assert_vector(coords, len=2)
+  checkmate::assert_double(azimut, lower=270, upper=360)
+  checkmate::assert_string(proj)
+  checkmate::assert_true(distance %% bin == 0)
+  
   # Initialize starting point
   A0 <- c("lon" = coords[1], "lat" = coords[2]) |> 
     sf::st_point(dim=XY) |>
